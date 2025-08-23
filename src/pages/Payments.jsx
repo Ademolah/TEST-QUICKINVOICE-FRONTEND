@@ -3,7 +3,9 @@ import axios from "axios";
 import { motion } from "framer-motion";
 import { CreditCard, Nfc, CheckCircle2, XCircle, Loader2, Shield } from "lucide-react";
 
-const API = "http://localhost:4000";
+// const API = "http://localhost:4000";
+
+const API = "https://quickinvoice-backend-1.onrender.com"
 
 export default function Payments() {
   const [amount, setAmount] = useState("");
@@ -42,6 +44,34 @@ export default function Payments() {
       throw e;
     }
   };
+
+//   const initiatePayment = async () => {
+//   setError("");
+//   if (!amount || Number(amount) <= 0) {
+//     setError("Please enter a valid charge amount.");
+//     return;
+//   }
+//   try {
+//     setStatus("initiating");
+//     const res = await axios.post(
+//       `${API}/api/payments/initiate`,
+//       { amount: Number(amount), method, note },
+//       { headers: { Authorization: `Bearer ${token}` } }
+//     );
+//     const txData = {
+//       reference: res.data.reference,
+//       amount: Number(amount),
+//       status: "pending",
+//     };
+//     setTx(txData);
+//     return txData;
+//   } catch (e) {
+//     setStatus("idle");
+//     setError(e?.response?.data?.error || "Unable to initiate payment.");
+//     throw e;
+//   }
+// };
+
 
   const confirmPayment = async ({ reference, cardToken }) => {
     // cardToken is the tokenized card “tap” payload (mocked for now)

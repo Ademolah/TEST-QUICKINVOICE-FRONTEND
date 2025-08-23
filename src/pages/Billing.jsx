@@ -7,9 +7,9 @@ import { CreditCard, CheckCircle, Loader2, Clock } from "lucide-react";
 
 // const API = process.env.REACT_APP_API_URL || "http://localhost:4000";
 
-const API =  "http://localhost:4000";
+// const API =  "http://localhost:4000";
 
-// const API = "https://quickinvoice-backend-1.onrender.com"
+const API = "https://quickinvoice-backend-1.onrender.com"
 
 export default function Billing() {
   const [user, setUser] = useState(null);
