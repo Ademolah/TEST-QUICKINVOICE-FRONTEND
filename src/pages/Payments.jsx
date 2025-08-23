@@ -22,19 +22,41 @@ export default function Payments() {
   const token = localStorage.getItem("token");
 
   // Try to ensure subaccount exists (idempotent)
-  const ensureSubaccount = async () => {
-    try {
-      const res = await axios.post(
-        `${API}/api/payments/subaccount`,
-        {},
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      if (res.data?.subaccount?.subaccount_code) setHasSubaccount(true);
-    } catch (err) {
-      console.error(err?.response?.data || err);
-      setMessage(err?.response?.data?.message || "Unable to setup settlement subaccount");
+  // const ensureSubaccount = async () => {
+  //   try {
+  //     const res = await axios.post(
+  //       `${API}/api/payments/subaccount`,
+  //       {},
+  //       { headers: { Authorization: `Bearer ${token}` } }
+  //     );
+  //     if (res.data?.subaccount?.subaccount_code) setHasSubaccount(true);
+  //   } catch (err) {
+  //     console.error(err?.response?.data || err);
+  //     setMessage(err?.response?.data?.message || "Unable to setup settlement subaccount");
+  //   }
+  // };
+
+  // Ensure settlement subaccount exists (idempotent)
+const ensureSubaccount = async () => {
+  try {
+    const res = await axios.post(
+      `${API}/api/payments/subaccount`,
+      {},
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    const sub = res.data?.subaccount;
+    if (sub?.subaccount_code) {
+      setHasSubaccount(true);
+      // optional: keep subaccount details in state for later use
+      // setSubaccount(sub);
+      hasSubaccount(sub)
     }
-  };
+  } catch (err) {
+    console.error("Subaccount setup error:", err?.response?.data || err.message || err);
+    setMessage(err?.response?.data?.message || "Unable to setup settlement subaccount");
+  }
+};
 
   useEffect(() => {
     ensureSubaccount();
