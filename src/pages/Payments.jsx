@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { motion } from "framer-motion";
 import { CreditCard, Zap, ShieldCheck, CheckCircle2, Loader2 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 // const API = "http://localhost:4000";
 
@@ -16,6 +17,7 @@ export default function Payments() {
   const [status, setStatus] = useState(null); // null | 'pending' | 'success' | 'failed'
   const [message, setMessage] = useState("");
   const [hasSubaccount, setHasSubaccount] = useState(false);
+  const navigate = useNavigate()
 
   const token = localStorage.getItem("token");
 
@@ -227,6 +229,16 @@ export default function Payments() {
             Your customer is redirected to Paystack’s secure checkout; funds settle into your linked bank via subaccount.
           </div>
         </motion.div>
+      </div>
+
+      {/* Back to Dashboard button */}
+      <div className="flex justify-center mt-6">
+        <button
+          onClick={() => navigate("/dashboard")}
+          className="px-6 py-3 bg-gradient-to-r from-blue-600 to-green-500 text-white font-semibold rounded-full shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300"
+        >
+          ⬅ Back to Dashboard
+        </button>
       </div>
     </div>
   );
