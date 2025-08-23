@@ -1,267 +1,154 @@
-import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { motion } from "framer-motion";
-import { CreditCard, Zap, ShieldCheck, CheckCircle2, Loader2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
+// routes/payments.js
+const express = require('express');
+const axios = require('axios');
+const { body, validationResult } = require('express-validator');
+const auth = require('../middleware/authMiddleware');
+const User = require('../models/User');
 
-// const API = "http://localhost:4000";
+const router = express.Router();
 
-const API = "https://quickinvoice-backend-1.onrender.com"
+const PAYSTACK_SECRET = process.env.PAYSTACK_SECRET_KEY;
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
+const PAYSTACK_BASE = 'https://api.paystack.co';
 
-export default function Payments() {
-  const [amount, setAmount] = useState("");
-  const [description, setDescription] = useState("In-person NFC payment");
-  const [loading, setLoading] = useState(false);
-  const [verifying, setVerifying] = useState(false);
-  const [reference, setReference] = useState("");
-  const [status, setStatus] = useState(null); // null | 'pending' | 'success' | 'failed'
-  const [message, setMessage] = useState("");
-  const [hasSubaccount, setHasSubaccount] = useState(false);
-  const navigate = useNavigate()
+// helper
+const paystack = axios.create({
+  baseURL: PAYSTACK_BASE,
+  headers: { Authorization: `Bearer ${PAYSTACK_SECRET}` },
+});
 
-  const token = localStorage.getItem("token");
-
-  // Try to ensure subaccount exists (idempotent)
-  // const ensureSubaccount = async () => {
-  //   try {
-  //     const res = await axios.post(
-  //       `${API}/api/payments/subaccount`,
-  //       {},
-  //       { headers: { Authorization: `Bearer ${token}` } }
-  //     );
-  //     if (res.data?.subaccount?.subaccount_code) setHasSubaccount(true);
-  //   } catch (err) {
-  //     console.error(err?.response?.data || err);
-  //     setMessage(err?.response?.data?.message || "Unable to setup settlement subaccount");
-  //   }
-  // };
-
-  // Ensure settlement subaccount exists (idempotent)
-const ensureSubaccount = async () => {
+// 1) Create subaccount ONCE
+router.post('/subaccount', auth, async (req, res) => {
   try {
-    const res = await axios.post(
-      `${API}/api/payments/subaccount`,
-      {},
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
-    const sub = res.data?.subaccount;
-    if (sub?.subaccount_code) {
-      setHasSubaccount(true);
-      // optional: keep subaccount details in state for later use
-      // setSubaccount(sub);
-      hasSubaccount(sub)
+    if (user.paystack?.subaccountCode) {
+      return res.json({ subaccountCode: user.paystack.subaccountCode, alreadyExists: true });
     }
-  } catch (err) {
-    console.error("Subaccount setup error:", err?.response?.data || err.message || err);
-    setMessage(err?.response?.data?.message || "Unable to setup settlement subaccount");
-  }
-};
 
-  useEffect(() => {
-    ensureSubaccount();
-    // eslint-disable-next-line
-  }, []);
-
-  const initiate = async () => {
-    if (!amount || Number(amount) <= 0) {
-      setMessage("Enter a valid amount.");
-      return;
+    const { bankName, accountNumber, accountName } = user.accountDetails || {};
+    if (!bankName || !accountNumber || !accountName) {
+      return res.status(400).json({ message: 'Missing bank details in accountDetails' });
     }
-    setLoading(true);
-    setMessage("");
-    setStatus(null);
-    try {
-      const res = await axios.post(
-        `${API}/api/payments/initiate`,
-        { amount: Number(amount), description },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-      const { authorization_url, reference } = res.data;
-      setReference(reference);
-      setStatus("pending");
 
-      // Open Paystack checkout — behaves like “tap to pay” UX
-      window.open(authorization_url, "_blank");
-
-      // Start polling verification every 3s for up to ~2 minutes
-      pollVerify(reference);
-    } catch (err) {
-      console.error(err?.response?.data || err);
-      setMessage(err?.response?.data?.message || "Failed to initiate payment");
-    } finally {
-      setLoading(false);
+    // Paystack requires bank code, not bank name. For production, map bankName -> bank_code via their bank list API.
+    // For now, if you already stored bank_code, use it instead of bankName.
+    // Example: assume you stored bank_code in accountDetails.bankCode
+    const bankCode = user.accountDetails.bankCode;
+    if (!bankCode) {
+      return res.status(400).json({ message: 'Missing bankCode; map bankName to bank_code and store in accountDetails.bankCode' });
     }
-  };
 
-  const pollVerify = async (ref) => {
-    setVerifying(true);
-    const started = Date.now();
-    const timeoutMs = 120000;
-
-    const tick = async () => {
-      try {
-        const res = await axios.get(`${API}/api/payments/verify/${ref}`, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        setStatus(res.data.status);
-        if (res.data.status === "success") {
-          setMessage("Payment successful!");
-          setVerifying(false);
-          return;
-        }
-        if (res.data.status === "failed") {
-          setMessage("Payment failed.");
-          setVerifying(false);
-          return;
-        }
-        if (Date.now() - started < timeoutMs) {
-          setTimeout(tick, 3000);
-        } else {
-          setMessage("Verification timed out. You can try again.");
-          setVerifying(false);
-        }
-      } catch (err) {
-        console.error(err?.response?.data || err);
-        if (Date.now() - started < timeoutMs) {
-          setTimeout(tick, 3000);
-        } else {
-          setMessage("Verification timed out.");
-          setVerifying(false);
-        }
-      }
+    const percentage_charge = 100 - (user.paystack?.splitPercentage ?? 98); // platform’s share (e.g. 2)
+    const payload = {
+      business_name: user.businessName,
+      settlement_bank: bankCode,
+      account_number: accountNumber,
+      percentage_charge: percentage_charge, // percent the platform takes
     };
 
-    tick();
-  };
+    const { data } = await paystack.post('/subaccount', payload);
+    if (!data.status) return res.status(400).json({ message: data.message || 'Subaccount creation failed' });
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-[#F0F7FF] via-white to-[#ECFDF5] p-6 md:p-12">
-      <div className="max-w-3xl mx-auto">
-        {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: -8 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex items-center justify-between mb-8"
-        >
-          <div>
-            <h1 className="text-3xl md:text-4xl font-extrabold text-[#0046A5]">
-              Accept Payments
-            </h1>
-            <p className="text-gray-600 mt-1">
-              Seamlessly collect in-person payments with split settlement to your bank.
-            </p>
-          </div>
-          <div className="hidden md:flex items-center gap-2 text-sm text-gray-500">
-            <ShieldCheck size={18} />
-            Secured by Paystack
-          </div>
-        </motion.div>
+    user.paystack.subaccountCode = data.data.subaccount_code;
+    await user.save();
 
-        {/* Card */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white/80 backdrop-blur rounded-2xl shadow-xl p-6 md:p-8 border border-gray-100"
-        >
-          {/* Form */}
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div className="md:col-span-3">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Amount (NGN)
-              </label>
-              <input
-                type="number"
-                min="0"
-                step="0.01"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="e.g. 25000"
-                className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-[#00B86B]"
-              />
-            </div>
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Description
-              </label>
-              <input
-                type="text"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Payment note"
-                className="w-full border border-gray-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-[#00B86B]"
-              />
-            </div>
-          </div>
+    res.json({ subaccountCode: data.data.subaccount_code, alreadyExists: false });
+  } catch (err) {
+    console.error('Subaccount error:', err?.response?.data || err.message);
+    res.status(500).json({ message: 'Server error creating subaccount' });
+  }
+});
 
-          {/* CTA */}
-          <div className="mt-6 flex flex-col md:flex-row items-stretch md:items-center gap-3">
-            <motion.button
-              whileTap={{ scale: 0.98 }}
-              onClick={initiate}
-              disabled={loading || !hasSubaccount}
-              className={`flex-1 inline-flex items-center justify-center gap-2 rounded-xl px-5 py-3 font-semibold text-white shadow-md transition
-                ${loading || !hasSubaccount ? 'bg-gray-400 cursor-not-allowed' : 'bg-gradient-to-r from-[#0046A5] to-[#00B86B] hover:shadow-lg'}`}
-            >
-              {loading ? <Loader2 className="animate-spin" size={18} /> : <Zap size={18} />}
-              {loading ? "Initializing..." : "Tap to Pay (NFC Style)"}
-            </motion.button>
+// 2) Create payment link (initialize transaction) + return authorization_url
+router.post(
+  '/create-link',
+  auth,
+  body('amount').isNumeric().withMessage('Amount is required'),
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) return res.status(400).json({ errors: errors.array() });
 
-            {!hasSubaccount && (
-              <div className="text-sm text-amber-600">
-                Settlement account not set. We’ll auto-create it from your profile.
-              </div>
-            )}
-          </div>
+      const { amount, description } = req.body;
+      const user = await User.findById(req.userId);
+      if (!user) return res.status(404).json({ message: 'User not found' });
 
-          {/* Status */}
-          {(status || message) && (
-            <div className="mt-6">
-              <div className={`rounded-xl p-4 border
-                ${status === 'success' ? 'bg-green-50 border-green-200' :
-                  status === 'failed' ? 'bg-red-50 border-red-200' :
-                  'bg-blue-50 border-blue-200'}`}>
-                <div className="flex items-center gap-2">
-                  {status === 'success' ? (
-                    <CheckCircle2 className="text-green-600" />
-                  ) : status === 'failed' ? (
-                    <CreditCard className="text-red-600" />
-                  ) : (
-                    <Loader2 className="animate-spin text-blue-600" />
-                  )}
-                  <div className="font-medium">
-                    {status === 'success' ? "Payment successful" :
-                     status === 'failed' ? "Payment failed" :
-                     verifying ? "Verifying payment..." : "Waiting for payment..."}
-                  </div>
-                </div>
-                <div className="mt-1 text-sm text-gray-700">
-                  {message}
-                </div>
-                {reference && (
-                  <div className="mt-2 text-xs text-gray-500">Ref: {reference}</div>
-                )}
-              </div>
-            </div>
-          )}
+      // Ensure subaccount exists; if not, bail (or auto-create by calling /subaccount here)
+      if (!user.paystack?.subaccountCode) {
+        return res.status(400).json({ message: 'No subaccount for this user. Create it first.' });
+      }
 
-          {/* Trust row */}
-          <div className="mt-6 flex items-center gap-3 text-xs text-gray-500">
-            <ShieldCheck size={16} />
-            Your customer is redirected to Paystack’s secure checkout; funds settle into your linked bank via subaccount.
-          </div>
-        </motion.div>
-      </div>
+      // Paystack expects amount in kobo
+      const kobo = Math.round(Number(amount) * 100);
 
-      {/* Back to Dashboard button */}
-      <div className="flex justify-center mt-6">
-        <button
-          onClick={() => navigate("/dashboard")}
-          className="px-6 py-3 bg-gradient-to-r from-blue-600 to-green-500 text-white font-semibold rounded-full shadow-md hover:shadow-lg hover:scale-105 transition-all duration-300"
-        >
-          ⬅ Back to Dashboard
-        </button>
-      </div>
-    </div>
-  );
-}
+      const initPayload = {
+        amount: kobo,
+        email: user.email,
+        callback_url: `${FRONTEND_URL}/payments/callback`, // Create a simple page to show result
+        metadata: {
+          userId: String(user._id),
+          businessName: user.businessName,
+          description: description || 'Payment',
+        },
+        subaccount: user.paystack.subaccountCode, // route to merchant’s subaccount
+        // optional: bearer: 'subaccount' (fees charged to subaccount instead)
+      };
+
+      const { data } = await paystack.post('/transaction/initialize', initPayload);
+      if (!data.status) return res.status(400).json({ message: data.message || 'Failed to initialize' });
+
+      res.json({
+        authorization_url: data.data.authorization_url,
+        access_code: data.data.access_code,
+        reference: data.data.reference,
+      });
+    } catch (err) {
+      console.error('Create-link error:', err?.response?.data || err.message);
+      res.status(500).json({ message: 'Server error initializing payment' });
+    }
+  }
+);
+
+// 3) Verify payment by reference (for polling)
+router.get('/verify/:reference', auth, async (req, res) => {
+  try {
+    const { reference } = req.params;
+    const { data } = await paystack.get(`/transaction/verify/${reference}`);
+    res.json(data);
+  } catch (err) {
+    console.error('Verify error:', err?.response?.data || err.message);
+    res.status(500).json({ message: 'Server error verifying transaction' });
+  }
+});
+
+// 4) Webhook to confirm payment (configure on Paystack dashboard)
+router.post('/webhook', express.json({ type: '*/*' }), (req, res) => {
+  try {
+    const hash = require('crypto')
+      .createHmac('sha512', PAYSTACK_SECRET)
+      .update(JSON.stringify(req.body))
+      .digest('hex');
+
+    if (req.headers['x-paystack-signature'] !== hash) {
+      return res.status(401).send('Invalid signature');
+    }
+
+    const event = req.body;
+    // Handle events (charge.success, etc.)
+    // Example:
+    if (event.event === 'charge.success') {
+      const ref = event.data.reference;
+      // TODO: update your DB payments collection with status=success for ref
+      console.log('Payment success for ref:', ref);
+    }
+
+    res.sendStatus(200);
+  } catch (err) {
+    console.error('Webhook error:', err.message);
+    res.sendStatus(500);
+  }
+});
+
+module.exports = router;
