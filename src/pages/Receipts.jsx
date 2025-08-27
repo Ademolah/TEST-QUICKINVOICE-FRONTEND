@@ -2,14 +2,15 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { FileText, Search, ReceiptText } from "lucide-react";
+import { useCurrency } from "../context/CurrencyContext";
 
 // const brandBlue = "#0046A5";
 // const brandGreen = "#00B86B";
 
 
-// const API =  "http://localhost:4000";
+const API =  "http://localhost:4000";
 
-const API = "https://quickinvoice-backend-1.onrender.com"
+// const API = "https://quickinvoice-backend-1.onrender.com"
 
 export default function Receipts() {
   const [loading, setLoading] = useState(true);
@@ -34,6 +35,15 @@ export default function Receipts() {
     };
     load();
   }, []);
+
+  const { code, symbol } = useCurrency(); // 👈 get currency settings
+      
+        // helper to format currency
+        const formatCurrency = (amount) =>
+          new Intl.NumberFormat('en', {
+            style: 'currency',
+            currency: code,
+          }).format(amount);
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -107,7 +117,7 @@ export default function Receipts() {
                 <tr key={inv._id} className="border-t hover:bg-gray-50">
                   <td className="px-4 py-3">{inv._id.slice(-6).toUpperCase()}</td>
                   <td className="px-4 py-3">{inv.clientName}</td>
-                  <td className="px-4 py-3">₦{Number(inv.total).toLocaleString()}</td>
+                  <td className="px-4 py-3">{formatCurrency(Number(inv.total)).toLocaleString()}</td>
                   <td className="px-4 py-3">
                     {new Date(inv.createdAt).toLocaleDateString("en-GB", {
                       day: "2-digit",

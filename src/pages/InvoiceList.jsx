@@ -3,10 +3,11 @@ import axios from "axios";
 import { Link } from "react-router-dom";
 import { Trash2, Edit, Eye, CheckCircle } from "lucide-react";
 import { useNavigate } from 'react-router-dom';
+import { useCurrency } from "../context/CurrencyContext";
 
-// const API =  "http://localhost:4000";
+const API =  "http://localhost:4000";
 
-const API = "https://quickinvoice-backend-1.onrender.com"
+// const API = "https://quickinvoice-backend-1.onrender.com"
 
 const InvoiceList = () => {
   const [invoices, setInvoices] = useState([]);
@@ -29,6 +30,15 @@ const InvoiceList = () => {
       setLoading(false);
     }
   };
+
+  const { code, symbol } = useCurrency(); // 👈 get currency settings
+  
+    // helper to format currency
+    const formatCurrency = (amount) =>
+      new Intl.NumberFormat('en', {
+        style: 'currency',
+        currency: code,
+      }).format(amount);
 
   const deleteInvoice = async (id) => {
     if (!window.confirm("Are you sure you want to delete this invoice?")) return;
@@ -108,7 +118,8 @@ const InvoiceList = () => {
                             {inv.clientName}
                         </Link>
                     </td>
-                  <td className="px-4 py-3">₦{inv.total.toLocaleString()}</td>
+                  {/* <td className="px-4 py-3">₦{inv.total.toLocaleString()}</td> */}
+                  <td className="px-4 py-3">{formatCurrency(inv.total)}</td>
                   <td className={`px-4 py-3 font-semibold ${inv.status === 'paid' ? 'text-green-600' : inv.status === 'overdue' ? 'text-red-600' : 'text-gray-700'}`}>
                     {inv.status.charAt(0).toUpperCase() + inv.status.slice(1)}
                   </td>

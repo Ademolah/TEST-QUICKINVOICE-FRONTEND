@@ -20,6 +20,7 @@ import { Toaster } from "react-hot-toast";
 import Contact from "./pages/Contact";
 import Inventory from "./pages/Inventory";
 import Payments from "./pages/Payments";
+import { CurrencyProvider } from "./context/CurrencyContext";
 
 export default function App() {
   return (
@@ -58,13 +59,13 @@ export default function App() {
           <Route path="/support" element={<ProtectedRoute> <Support /> </ProtectedRoute>}/>
           <Route path="/receipts" element={ <ProtectedRoute> <Receipts /> </ProtectedRoute>} />
           <Route path="/receipts/:invoiceId" element={ <ProtectedRoute> <ReceiptDetails /> </ProtectedRoute>} /> */}
-          <Route path="/invoices" element={ <InvoiceList /> }/>
-          <Route path="/invoices/:id" element={ <InvoiceDetails /> }/>
-          <Route path="/invoices/new" element={ <NewInvoice /> }/>
-          <Route path="/settings" element={ <Settings /> }/>
+          <Route path="/invoices" element={<InvoiceList /> }/>
+          <Route path="/invoices/:id" element={  <InvoiceDetails /> }/>
+          <Route path="/invoices/new" element={  <NewInvoice /> }/>
+          <Route path="/settings" element={ <Settings />  }/>
           <Route path="/billing" element={ <Billing /> }/>
           <Route path="/inventory" element={ <Inventory /> }/>
-          <Route path="/payment" element={ <Payments /> }/>
+          <Route path="/payment" element={  <Payments /> }/>
           <Route path="/clients" element={ <Client />}/>
           <Route path="/reports" element={ <Reports />}/>
           <Route path="/support" element={<Support /> }/>

@@ -4,11 +4,12 @@ import axios from "axios";
 import html2canvas from "html2canvas";
 import jsPDF from "jspdf";
 import { ArrowLeft, Download, CheckCircle2 } from "lucide-react";
+import { useCurrency } from "../context/CurrencyContext";
 
 
-// const API =  "http://localhost:4000";
+const API =  "http://localhost:4000";
 
-const API = "https://quickinvoice-backend-1.onrender.com"
+// const API = "https://quickinvoice-backend-1.onrender.com"
 
 export default function ReceiptDetails() {
   const { invoiceId } = useParams();
@@ -73,6 +74,15 @@ export default function ReceiptDetails() {
   //   pdf.addImage(imgData, "PNG", 24, y, imgWidth, imgHeight);
   //   pdf.save(`Receipt_${invoice?._id?.slice(-6).toUpperCase()}.pdf`);
   // };
+
+  const { code, symbol } = useCurrency(); // 👈 get currency settings
+    
+      // helper to format currency
+      const formatCurrency = (amount) =>
+        new Intl.NumberFormat('en', {
+          style: 'currency',
+          currency: code,
+        }).format(amount);
 
   const downloadPDF = async () => {
   if (!captureRef.current) return;
@@ -209,8 +219,8 @@ export default function ReceiptDetails() {
                   <tr key={idx} className="border-t">
                     <td className="px-4 py-3">{it.description}</td>
                     <td className="px-4 py-3">{it.quantity}</td>
-                    <td className="px-4 py-3">₦{Number(it.unitPrice).toLocaleString()}</td>
-                    <td className="px-4 py-3 font-medium">₦{Number(it.total ?? it.quantity * it.unitPrice).toLocaleString()}</td>
+                    <td className="px-4 py-3">{formatCurrency(Number(it.unitPrice)).toLocaleString()}</td>
+                    <td className="px-4 py-3 font-medium">{formatCurrency(Number(it.total ?? it.quantity * it.unitPrice)).toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>
@@ -233,19 +243,19 @@ export default function ReceiptDetails() {
           <div className="bg-gray-50 rounded-xl p-4 border">
             <div className="flex justify-between py-1">
               <span className="text-gray-600">Subtotal</span>
-              <span className="font-medium">₦{Number(subtotal).toLocaleString()}</span>
+              <span className="font-medium">{formatCurrency(subtotal).toLocaleString()}</span>
             </div>
             <div className="flex justify-between py-1">
               <span className="text-gray-600">Tax</span>
-              <span className="font-medium">₦{Number(tax || 0).toLocaleString()}</span>
+              <span className="font-medium">{formatCurrency(Number(tax || 0)).toLocaleString()}</span>
             </div>
             <div className="flex justify-between py-1">
               <span className="text-gray-600">Discount</span>
-              <span className="font-medium">₦{Number(discount || 0).toLocaleString()}</span>
+              <span className="font-medium">{formatCurrency(Number(discount || 0)).toLocaleString()}</span>
             </div>
             <div className="border-t mt-2 pt-2 flex justify-between">
               <span className="font-semibold text-[#0046A5]">Grand Total</span>
-              <span className="font-bold text-[#0046A5]">₦{Number(total).toLocaleString()}</span>
+              <span className="font-bold text-[#0046A5]">{formatCurrency(total).toLocaleString()}</span>
             </div>
           </div>
         </div>

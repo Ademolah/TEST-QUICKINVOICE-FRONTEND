@@ -14,6 +14,7 @@ import {
   Trash2,
   Loader2,
 } from "lucide-react";
+import { useCurrency } from "../context/CurrencyContext";
 
 /**
  * Premium InvoiceDetails.jsx
@@ -47,6 +48,17 @@ export default function InvoiceDetails() {
   const [accountName, setAccountName] = useState("");
 
   const token = useMemo(() => localStorage.getItem("token"), []);
+
+
+
+  const { code, symbol } = useCurrency(); // 👈 get currency settings
+
+  // helper to format currency
+  const formatCurrency = (amount) =>
+    new Intl.NumberFormat('en', {
+      style: 'currency',
+      currency: code,
+    }).format(amount);
 
     const AccountDetails = async () => {
     try {
@@ -391,8 +403,8 @@ export default function InvoiceDetails() {
                     <tr key={idx} className="border-b last:border-b-0 hover:bg-gray-50">
                       <td className="px-4 py-4 text-sm text-gray-800">{it.description}</td>
                       <td className="px-4 py-4 text-right text-sm">{it.quantity}</td>
-                      <td className="px-4 py-4 text-right text-sm">{currencyFmt(it.unitPrice)}</td>
-                      <td className="px-4 py-4 text-right font-semibold">{currencyFmt(it.total ?? it.quantity * it.unitPrice)}</td>
+                      <td className="px-4 py-4 text-right text-sm">{formatCurrency(it.unitPrice)}</td>
+                      <td className="px-4 py-4 text-right font-semibold">{formatCurrency(it.total ?? it.quantity * it.unitPrice)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -419,22 +431,23 @@ export default function InvoiceDetails() {
               <div className="bg-white p-4 rounded-lg border border-gray-100 self-start">
                 <div className="flex justify-between mb-2">
                   <span className="text-sm text-gray-600">Subtotal</span>
-                  <span className="font-medium">{currencyFmt(subtotal)}</span>
+                  {/* <span className="font-medium">{currencyFmt(subtotal)}</span> */}
+                  <span className="font-medium">{formatCurrency(subtotal)}</span>
                 </div>
                 <div className="flex justify-between mb-2">
                   <span className="text-sm text-gray-600">Tax</span>
-                  <span className="font-medium">{currencyFmt(tax)}</span>
+                  <span className="font-medium">{formatCurrency(tax)}</span>
                 </div>
                 <div className="flex justify-between mb-2">
                   <span className="text-sm text-gray-600">Discount</span>
-                  <span className="font-medium">{currencyFmt(discount)}</span>
+                  <span className="font-medium">{formatCurrency(discount)}</span>
                 </div>
 
                 <div className="h-px bg-gray-200 my-2" />
 
                 <div className="flex justify-between items-center">
                   <span className="text-lg font-bold text-[#0046A5]">Total</span>
-                  <span className="text-xl font-extrabold text-[#0046A5]">{currencyFmt(total)}</span>
+                  <span className="text-xl font-extrabold text-[#0046A5]">{formatCurrency(total)}</span>
                 </div>
               </div>
             </div>

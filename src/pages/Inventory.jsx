@@ -2,6 +2,7 @@
 
 import React, { useEffect, useMemo, useState } from "react";
 import axios from "axios";
+import { useCurrency } from "../context/CurrencyContext";
 import { motion, AnimatePresence } from "framer-motion";
 import PremiumTrashButton from "../components/ui/Delete";
 import {
@@ -16,6 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+
 
 /* =========================
    Inline UI Primitives
@@ -51,6 +53,7 @@ const GhostButton = ({ className = "", children, ...props }) => (
 );
 
 
+
 // Card
 const Card = ({ className = "", children }) => (
   <div className={"bg-white rounded-2xl shadow-md border border-gray-100 " + className}>
@@ -64,8 +67,20 @@ const CardContent = ({ children, className = "" }) => (
   <div className={"p-5 " + className}>{children}</div>
 );
 
-// Dialog / Modal
+
 const Dialog = ({ open, onClose, children }) => {
+
+  const { code, symbol } = useCurrency(); // 👈 get currency settings
+  
+    // helper to format currency
+    const formatCurrency = (amount) =>
+      new Intl.NumberFormat('en', {
+        style: 'currency',
+        currency: code,
+      }).format(amount);
+// Dialog / Modal
+  
+
   return (
     <AnimatePresence>
       {open && (
@@ -104,13 +119,13 @@ const NGN = (n) =>
     Number(n || 0)
   );
 
-// const api = axios.create({
-//   baseURL: "http://localhost:4000/api",
-// });
-
 const api = axios.create({
-  baseURL: "https://quickinvoice-backend-1.onrender.com/api",
+  baseURL: "http://localhost:4000/api",
 });
+
+// const api = axios.create({
+//   baseURL: "https://quickinvoice-backend-1.onrender.com/api",
+// });
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
@@ -122,6 +137,16 @@ api.interceptors.request.use((config) => {
    Inventory Page
    ========================= */
 export default function Inventory() {
+
+  const { code, symbol } = useCurrency(); // 👈 get currency settings
+  
+    // helper to format currency
+    const formatCurrency = (amount) =>
+      new Intl.NumberFormat('en', {
+        style: 'currency',
+        currency: code,
+      }).format(amount);
+// Dialog / Modal
     
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -339,7 +364,7 @@ export default function Inventory() {
                 </div>
                 <div>
                   <p className="text-sm text-gray-500">Stock Value</p>
-                  <p className="text-2xl font-bold text-gray-800">{NGN(totals.totalValue)}</p>
+                  <p className="text-2xl font-bold text-gray-800">{formatCurrency((totals.totalValue))}</p>
                 </div>
               </CardContent>
             </Card>
@@ -426,7 +451,7 @@ export default function Inventory() {
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-gray-500">Price</span>
-                        <span className="font-semibold">{NGN(item.price)}</span>
+                        <span className="font-semibold">{formatCurrency((item.price))}</span>
                       </div>
                       <div className="flex items-center justify-between">
                         <span className="text-gray-500">Stock</span>
@@ -474,7 +499,7 @@ export default function Inventory() {
               icon={<Hash size={16} />}
             />
             <Field
-              label="Price (NGN)"
+              label="Price"
               type="number"
               value={form.price}
               onChange={(v) => setForm((f) => ({ ...f, price: v }))}
