@@ -40,40 +40,7 @@ export default function ReceiptDetails() {
     load();
   }, [invoiceId]);
 
-  // const downloadPDF = async () => {
-  //   if (!captureRef.current) return;
-    
-  //   const logRes = await fetch(`${API}/api/invoices/log`, {
-  //   method: "POST",
-  //   headers: {
-  //       "Content-Type": "application/json",
-  //       Authorization: `Bearer ${localStorage.getItem("token")}`, // ensure token
-  //   },
-  //   body: JSON.stringify({ type: "receipt" }),
-  //   });
-
-  //   const logData = await logRes.json(); // ✅ now guaranteed JSON
-  //   console.log("Usage log response:", logData);
-
-  //   if (!logRes.ok) {
-  //       alert(logData.message || "You have exceeded your limit. Upgrade to Pro.");
-  //       return; // 🚨 Stop download here
-  //       }
-
-  //   const node = captureRef.current;
-  //   const canvas = await html2canvas(node, { scale: 2, useCORS: true });
-  //   const imgData = canvas.toDataURL("image/png");
-  //   const pdf = new jsPDF("p", "pt", "a4");
-  //   const pageWidth = pdf.internal.pageSize.getWidth();
-  //   const pageHeight = pdf.internal.pageSize.getHeight();
-
-  //   const imgWidth = pageWidth - 48; // 24px margin each side
-  //   const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-  //   let y = 24;
-  //   pdf.addImage(imgData, "PNG", 24, y, imgWidth, imgHeight);
-  //   pdf.save(`Receipt_${invoice?._id?.slice(-6).toUpperCase()}.pdf`);
-  // };
+ 
 
   const { code, symbol } = useCurrency(); // 👈 get currency settings
     
@@ -83,6 +50,73 @@ export default function ReceiptDetails() {
           style: 'currency',
           currency: code,
         }).format(amount);
+
+    const sharePDF = async () => {
+    if (!captureRef.current) return;
+
+    // ✅ Log usage
+    const logRes = await fetch(`${API}/api/invoices/log`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+      body: JSON.stringify({ type: "receipt" }),
+    });
+
+    const logData = await logRes.json();
+    console.log("Usage log response:", logData);
+
+    try {
+      // ✅ Capture the receipt as before
+      const node = captureRef.current;
+      const canvas = await html2canvas(node, { scale: 2, useCORS: true });
+      const imgData = canvas.toDataURL("image/png");
+
+      const pdf = new jsPDF("p", "pt", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      const imgWidth = pageWidth - 48;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = 24;
+
+      pdf.addImage(imgData, "PNG", 24, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight - 48;
+
+      while (heightLeft > 0) {
+        position = heightLeft - imgHeight + 24;
+        pdf.addPage();
+        pdf.addImage(imgData, "PNG", 24, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      // ✅ Convert PDF to blob
+      const pdfBlob = pdf.output("blob");
+      const file = new File(
+        [pdfBlob],
+        `Receipt_${invoice?._id?.slice(-6).toUpperCase()}.pdf`,
+        { type: "application/pdf" }
+      );
+
+      // ✅ Share via Web Share API
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({
+          title: "QuickInvoice Receipt",
+          text: `Here is your receipt #${invoice?._id?.slice(-6).toUpperCase()}`,
+          files: [file],
+        });
+      } else {
+        alert("Sharing not supported on this device/browser. Please download instead.");
+      }
+    } catch (error) {
+      console.error("Error sharing PDF:", error);
+      alert("Failed to share receipt.");
+    }
+  };
+
 
   const downloadPDF = async () => {
   if (!captureRef.current) return;
@@ -152,6 +186,12 @@ export default function ReceiptDetails() {
         >
           <ArrowLeft size={16} /> Back
         </button>
+
+        <div className="flex gap-4 mt-6"></div>
+        <button onClick={sharePDF}
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white bg-gradient-to-r from-[#0046A5] to-[#00B86B] hover:opacity-90 transition"
+        variant="secondary">Share</button>
+
         <button
           onClick={downloadPDF}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white bg-gradient-to-r from-[#0046A5] to-[#00B86B] hover:opacity-90 transition"

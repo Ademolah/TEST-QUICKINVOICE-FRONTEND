@@ -20,7 +20,7 @@ import { Toaster } from "react-hot-toast";
 import Contact from "./pages/Contact";
 import Inventory from "./pages/Inventory";
 import Payments from "./pages/Payments";
-import { CurrencyProvider } from "./context/CurrencyContext";
+import Delivery from "./pages/Delivery";
 
 export default function App() {
   return (
@@ -65,6 +65,7 @@ export default function App() {
           <Route path="/settings" element={ <Settings />  }/>
           <Route path="/billing" element={ <Billing /> }/>
           <Route path="/inventory" element={ <Inventory /> }/>
+          <Route path="/delivery" element={ <Delivery /> }/>
           <Route path="/payment" element={  <Payments /> }/>
           <Route path="/clients" element={ <Client />}/>
           <Route path="/reports" element={ <Reports />}/>
