@@ -114,7 +114,7 @@ export default function InvoiceDetails() {
 
  const sharePDF = async () => {
   if (!invoiceRef.current) return;
-  setActionLoading(true);
+  
 
   try {
     // ✅ Log usage (same as download)
@@ -181,9 +181,7 @@ export default function InvoiceDetails() {
   } catch (err) {
     console.error("PDF share failed", err);
     alert("Failed to share PDF. Try again.");
-  } finally {
-    setActionLoading(false);
-  }
+  } 
 };
 
 
@@ -371,10 +369,10 @@ export default function InvoiceDetails() {
               </button>
             )}
 
-            <button onClick={sharePDF} disabled={actionLoading}
+            <button onClick={sharePDF} 
               className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white bg-gradient-to-r from-[#0046A5] to-[#00B86B] hover:opacity-90 transition"
             variant="secondary">
-              {actionLoading ? "Preparing..." : "Share"}
+              Share
               </button>
 
             <button
