@@ -7,9 +7,9 @@ import { ArrowLeft, Download, CheckCircle2 } from "lucide-react";
 import { useCurrency } from "../context/CurrencyContext";
 
 
-const API =  "http://localhost:4000";
+// const API =  "http://localhost:4000";
 
-// const API = "https://quickinvoice-backend-1.onrender.com"
+const API = "https://quickinvoice-backend-1.onrender.com"
 
 export default function ReceiptDetails() {
   const { invoiceId } = useParams();

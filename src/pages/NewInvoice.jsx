@@ -4,9 +4,9 @@ import axios from 'axios';
 import { Plus, Trash } from 'lucide-react';
 
 
-const API =  "http://localhost:4000";
+// const API =  "http://localhost:4000";
 
-// const API = "https://quickinvoice-backend-1.onrender.com"
+const API = "https://quickinvoice-backend-1.onrender.com"
 
 const NewInvoice = () => {
   const navigate = useNavigate();

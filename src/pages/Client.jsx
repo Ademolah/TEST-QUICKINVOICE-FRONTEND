@@ -2,9 +2,9 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-const API =  "http://localhost:4000";
+// const API =  "http://localhost:4000";
 
-// const API = "https://quickinvoice-backend-1.onrender.com"
+const API = "https://quickinvoice-backend-1.onrender.com"
 
 export default function Client() {
   const [clients, setClients] = useState([]);

@@ -23,9 +23,9 @@ import { useCurrency } from "../context/CurrencyContext";
  * - Downloads pixel-perfect PDF with html2canvas + jsPDF
  */
 
-const API_BASE = "http://localhost:4000";
+// const API_BASE = "http://localhost:4000";
 
-// const API_BASE = "https://quickinvoice-backend-1.onrender.com"
+const API_BASE = "https://quickinvoice-backend-1.onrender.com"
 
 
 const currencyFmt = (amt = 0) =>

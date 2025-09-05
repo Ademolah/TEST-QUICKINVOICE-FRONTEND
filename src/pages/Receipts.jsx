@@ -8,9 +8,9 @@ import { useCurrency } from "../context/CurrencyContext";
 // const brandGreen = "#00B86B";
 
 
-const API =  "http://localhost:4000";
+// const API =  "http://localhost:4000";
 
-// const API = "https://quickinvoice-backend-1.onrender.com"
+const API = "https://quickinvoice-backend-1.onrender.com"
 
 export default function Receipts() {
   const [loading, setLoading] = useState(true);

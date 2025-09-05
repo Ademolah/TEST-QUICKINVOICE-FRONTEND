@@ -5,9 +5,9 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { CreditCard, CheckCircle, Loader2, Clock } from "lucide-react";
 
-// const API = process.env.REACT_APP_API_URL || "http://localhost:4000";
+const API = process.env.REACT_APP_API_URL || "http://localhost:4000";
 
-const API =  "http://localhost:4000";
+// const API =  "http://localhost:4000";
 
 // const API = "https://quickinvoice-backend-1.onrender.com"
 
