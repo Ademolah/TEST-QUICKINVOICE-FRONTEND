@@ -67,6 +67,11 @@ export default function ReceiptDetails() {
     const logData = await logRes.json();
     console.log("Usage log response:", logData);
 
+    if (!logRes.ok) {
+    alert(logData.message || "You have exceeded your limit. Upgrade to Pro.");
+    return;
+  }
+
     try {
       // ✅ Capture the receipt as before
       const node = captureRef.current;
