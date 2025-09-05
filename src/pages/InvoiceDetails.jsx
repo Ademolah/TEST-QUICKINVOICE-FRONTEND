@@ -222,6 +222,7 @@ export default function InvoiceDetails() {
         useCORS: true,
         allowTaint: true,
         scrollY: -window.scrollY, // avoid scroll offset
+        width: invoiceRef.current.scrollWidth,  // ✅ full width
       });
 
       // Restore original scroll style
