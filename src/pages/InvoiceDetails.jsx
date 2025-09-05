@@ -192,6 +192,11 @@ export default function InvoiceDetails() {
     setActionLoading(true);
     try {
 
+        // ✅ Temporarily expand the table so all columns fit before capture
+      const scrollContainer = invoiceRef.current.querySelector(".overflow-x-auto");
+      const originalStyle = scrollContainer.style.overflowX;
+      scrollContainer.style.overflowX = "visible"; // disable scroll
+
         const logRes = await fetch(`${API_BASE}/api/invoices/log`, {
         method: "POST",
         headers: {
@@ -218,6 +223,9 @@ export default function InvoiceDetails() {
         allowTaint: true,
         scrollY: -window.scrollY, // avoid scroll offset
       });
+
+      // Restore original scroll style
+    scrollContainer.style.overflowX = originalStyle;
 
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF("p", "mm", "a4");
