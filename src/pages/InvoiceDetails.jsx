@@ -23,13 +23,13 @@ import { useCurrency } from "../context/CurrencyContext";
  * - Downloads pixel-perfect PDF with html2canvas + jsPDF
  */
 
-// const API_BASE = "http://localhost:4000";
+const API_BASE = "http://localhost:4000";
 
-const API_BASE = "https://quickinvoice-backend-1.onrender.com"
+// const API_BASE = "https://quickinvoice-backend-1.onrender.com"
 
 
-const currencyFmt = (amt = 0) =>
-  `₦${Number(amt || 0).toLocaleString("en-NG")}`;
+// const currencyFmt = (amt = 0) =>
+//   `₦${Number(amt || 0).toLocaleString("en-NG")}`;
 
 
 export default function InvoiceDetails() {
@@ -192,10 +192,10 @@ export default function InvoiceDetails() {
     setActionLoading(true);
     try {
 
-        // ✅ Temporarily expand the table so all columns fit before capture
-      const scrollContainer = invoiceRef.current.querySelector(".overflow-x-auto");
-      const originalStyle = scrollContainer.style.overflowX;
-      scrollContainer.style.overflowX = "visible"; // disable scroll
+      //   // ✅ Temporarily expand the table so all columns fit before capture
+      // const scrollContainer = invoiceRef.current.querySelector(".overflow-x-auto");
+      // const originalStyle = scrollContainer.style.overflowX;
+      // scrollContainer.style.overflowX = "visible"; // disable scroll
 
         const logRes = await fetch(`${API_BASE}/api/invoices/log`, {
         method: "POST",
@@ -222,11 +222,10 @@ export default function InvoiceDetails() {
         useCORS: true,
         allowTaint: true,
         scrollY: -window.scrollY, // avoid scroll offset
-        width: invoiceRef.current.scrollWidth,  // ✅ full width
+       
       });
 
-      // Restore original scroll style
-    scrollContainer.style.overflowX = originalStyle;
+      
 
       const imgData = canvas.toDataURL("image/png");
       const pdf = new jsPDF("p", "mm", "a4");
@@ -456,8 +455,9 @@ export default function InvoiceDetails() {
             </div>
 
             {/* Items table */}
-            <div className="overflow-x-auto">
-              <table className="w-full min-w-[600px]">
+            <div className="overflow-x-auto  rounded-xl border">
+              {/* <table className="w-full min-w-[600px]"> */}
+              <table className="min-w-full text-left">
                 <thead>
                   <tr className="bg-gray-50">
                     <th className="text-left px-4 py-3 text-sm text-gray-600">Description</th>

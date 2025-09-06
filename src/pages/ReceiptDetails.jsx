@@ -7,9 +7,9 @@ import { ArrowLeft, Download, CheckCircle2 } from "lucide-react";
 import { useCurrency } from "../context/CurrencyContext";
 
 
-// const API =  "http://localhost:4000";
+const API =  "http://localhost:4000";
 
-const API = "https://quickinvoice-backend-1.onrender.com"
+// const API = "https://quickinvoice-backend-1.onrender.com"
 
 export default function ReceiptDetails() {
   const { invoiceId } = useParams();
@@ -18,6 +18,7 @@ export default function ReceiptDetails() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const captureRef = useRef(null);
+  const [actionLoading, setActionLoading] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -53,6 +54,7 @@ export default function ReceiptDetails() {
 
     const sharePDF = async () => {
       if (!captureRef.current) return;
+      setActionLoading(true)
 
       // ✅ Log usage
       const logRes = await fetch(`${API}/api/invoices/log`, {
@@ -119,6 +121,8 @@ export default function ReceiptDetails() {
     } catch (error) {
       console.error("Error sharing PDF:", error);
       alert("Failed to share receipt.");
+    } finally{
+      setActionLoading(false)
     }
   };
 
@@ -193,9 +197,9 @@ export default function ReceiptDetails() {
         </button>
 
         <div className="flex gap-4 mt-6"></div>
-        <button onClick={sharePDF}
+        <button onClick={sharePDF} disabled={actionLoading}
           className="inline-flex items-center gap-2 px-4 py-2 rounded-lg text-white bg-gradient-to-r from-[#0046A5] to-[#00B86B] hover:opacity-90 transition"
-        variant="secondary">Share</button>
+        variant="secondary">{actionLoading ? "Preparing..." : "Share"}</button>
 
         <button
           onClick={downloadPDF}
