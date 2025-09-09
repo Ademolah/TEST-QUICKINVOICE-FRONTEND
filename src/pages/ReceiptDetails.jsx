@@ -7,9 +7,9 @@ import { ArrowLeft, Download, CheckCircle2 } from "lucide-react";
 import { useCurrency } from "../context/CurrencyContext";
 
 
-const API =  "http://localhost:4000";
+// const API =  "http://localhost:4000";
 
-// const API = "https://quickinvoice-backend-1.onrender.com"
+const API = "https://quickinvoice-backend-1.onrender.com"
 
 export default function ReceiptDetails() {
   const { invoiceId } = useParams();
@@ -52,79 +52,164 @@ export default function ReceiptDetails() {
           currency: code,
         }).format(amount);
 
-    const sharePDF = async () => {
-      if (!captureRef.current) return;
-      setActionLoading(true)
+  //   const sharePDF = async () => {
+  //     if (!captureRef.current) return;
+  //     setActionLoading(true)
 
-      // ✅ Log usage
-      const logRes = await fetch(`${API}/api/invoices/log`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
-        body: JSON.stringify({ type: "receipt" }),
-      });
+  //     // ✅ Log usage
+  //     const logRes = await fetch(`${API}/api/invoices/log`, {
+  //       method: "POST",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //         Authorization: `Bearer ${localStorage.getItem("token")}`,
+  //       },
+  //       body: JSON.stringify({ type: "receipt" }),
+  //     });
 
-      const logData = await logRes.json();
-      console.log("Usage log response:", logData);
+  //     const logData = await logRes.json();
+  //     console.log("Usage log response:", logData);
 
-      if (!logRes.ok) {
-      alert(logData.message || "You have exceeded your limit. Upgrade to Pro.");
-      return;
-    }
+  //     if (!logRes.ok) {
+  //     alert(logData.message || "You have exceeded your limit. Upgrade to Pro.");
+  //     return;
+  //   }
 
-    try {
-      // ✅ Capture the receipt as before
-      const node = captureRef.current;
-      const canvas = await html2canvas(node, { scale: 2, useCORS: true });
-      const imgData = canvas.toDataURL("image/png");
+  //   try {
+  //     // ✅ Capture the receipt as before
+  //     const node = captureRef.current;
+  //     const canvas = await html2canvas(node, { scale: 2, useCORS: true });
+  //     const imgData = canvas.toDataURL("image/png");
 
-      const pdf = new jsPDF("p", "pt", "a4");
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
+  //     const pdf = new jsPDF("p", "pt", "a4");
+  //     const pageWidth = pdf.internal.pageSize.getWidth();
+  //     const pageHeight = pdf.internal.pageSize.getHeight();
 
-      const imgWidth = pageWidth - 48;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+  //     const imgWidth = pageWidth - 48;
+  //     const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-      let heightLeft = imgHeight;
-      let position = 24;
+  //     let heightLeft = imgHeight;
+  //     let position = 24;
 
+  //     pdf.addImage(imgData, "PNG", 24, position, imgWidth, imgHeight);
+  //     heightLeft -= pageHeight - 48;
+
+  //     while (heightLeft > 0) {
+  //       position = heightLeft - imgHeight + 24;
+  //       pdf.addPage();
+  //       pdf.addImage(imgData, "PNG", 24, position, imgWidth, imgHeight);
+  //       heightLeft -= pageHeight;
+  //     }
+
+  //     // ✅ Convert PDF to blob
+  //     const pdfBlob = pdf.output("blob");
+  //     const file = new File(
+  //       [pdfBlob],
+  //       `Receipt_${invoice?._id?.slice(-6).toUpperCase()}.pdf`,
+  //       { type: "application/pdf" }
+  //     );
+
+  //     // ✅ Share via Web Share API
+  //     if (navigator.canShare && navigator.canShare({ files: [file] })) {
+  //       await navigator.share({
+  //         title: "QuickInvoice Receipt",
+  //         text: `Here is your receipt #${invoice?._id?.slice(-6).toUpperCase()}`,
+  //         files: [file],
+  //       });
+  //     } else {
+  //       alert("Sharing not supported on this device/browser. Please download instead.");
+  //     }
+  //   } catch (error) {
+  //     console.error("Error sharing PDF:", error);
+  //     alert("Failed to share receipt.");
+  //   } finally{
+  //     setActionLoading(false)
+  //   }
+  // };
+
+  const sharePDF = async () => {
+  if (!captureRef.current) return;
+  setActionLoading(true);
+
+  // ✅ Log usage
+  const logRes = await fetch(`${API}/api/invoices/log`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${localStorage.getItem("token")}`,
+    },
+    body: JSON.stringify({ type: "receipt" }),
+  });
+
+  const logData = await logRes.json();
+  console.log("Usage log response:", logData);
+
+  if (!logRes.ok) {
+    alert(logData.message || "You have exceeded your limit. Upgrade to Pro.");
+    setActionLoading(false);
+    return;
+  }
+
+  try {
+    // ✅ Capture receipt
+    const node = captureRef.current;
+    const canvas = await html2canvas(node, { scale: 2, useCORS: true });
+    const imgData = canvas.toDataURL("image/png");
+
+    const pdf = new jsPDF("p", "pt", "a4");
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+
+    const imgWidth = pageWidth - 48;
+    const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+    let heightLeft = imgHeight;
+    let position = 24;
+
+    pdf.addImage(imgData, "PNG", 24, position, imgWidth, imgHeight);
+    heightLeft -= pageHeight - 48;
+
+    while (heightLeft > 0) {
+      position = heightLeft - imgHeight + 24;
+      pdf.addPage();
       pdf.addImage(imgData, "PNG", 24, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight - 48;
-
-      while (heightLeft > 0) {
-        position = heightLeft - imgHeight + 24;
-        pdf.addPage();
-        pdf.addImage(imgData, "PNG", 24, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-
-      // ✅ Convert PDF to blob
-      const pdfBlob = pdf.output("blob");
-      const file = new File(
-        [pdfBlob],
-        `Receipt_${invoice?._id?.slice(-6).toUpperCase()}.pdf`,
-        { type: "application/pdf" }
-      );
-
-      // ✅ Share via Web Share API
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({
-          title: "QuickInvoice Receipt",
-          text: `Here is your receipt #${invoice?._id?.slice(-6).toUpperCase()}`,
-          files: [file],
-        });
-      } else {
-        alert("Sharing not supported on this device/browser. Please download instead.");
-      }
-    } catch (error) {
-      console.error("Error sharing PDF:", error);
-      alert("Failed to share receipt.");
-    } finally{
-      setActionLoading(false)
+      heightLeft -= pageHeight;
     }
-  };
+
+    // ✅ Convert PDF to blob + file
+    const pdfBlob = pdf.output("blob");
+    const fileName = `Receipt_${invoice?._id?.slice(-6).toUpperCase()}.pdf`;
+    const file = new File([pdfBlob], fileName, { type: "application/pdf" });
+
+    // ✅ Primary: Web Share API
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({
+        title: "QuickInvoice Receipt",
+        text: `Here is your receipt #${invoice?._id?.slice(-6).toUpperCase()}`,
+        files: [file],
+      });
+    } else {
+      // 🚨 Fallback
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+
+      // Option A: Trigger download
+      const link = document.createElement("a");
+      link.href = pdfUrl;
+      link.download = fileName;
+      link.click();
+
+      // Option B: Open WhatsApp share automatically
+      // window.open(`https://wa.me/?text=Here’s your receipt: ${pdfUrl}`, "_blank");
+
+      alert("Sharing not supported on this device. The receipt has been downloaded instead.");
+    }
+  } catch (error) {
+    console.error("Error sharing PDF:", error);
+    alert("Failed to share receipt.");
+  } finally {
+    setActionLoading(false);
+  }
+};
+
 
 
   const downloadPDF = async () => {

@@ -23,9 +23,9 @@ import { useCurrency } from "../context/CurrencyContext";
  * - Downloads pixel-perfect PDF with html2canvas + jsPDF
  */
 
-const API_BASE = "http://localhost:4000";
+// const API_BASE = "http://localhost:4000";
 
-// const API_BASE = "https://quickinvoice-backend-1.onrender.com"
+const API_BASE = "https://quickinvoice-backend-1.onrender.com"
 
 
 // const currencyFmt = (amt = 0) =>
@@ -112,12 +112,84 @@ export default function InvoiceDetails() {
     load();
   }, [id, token]);
 
- const sharePDF = async () => {
-  if (!invoiceRef.current) return;
+//  const sharePDF = async () => {
+//   if (!invoiceRef.current) return;
   
 
+//   try {
+//     // ✅ Log usage (same as download)
+//     const logRes = await fetch(`${API_BASE}/api/invoices/log`, {
+//       method: "POST",
+//       headers: {
+//         "Content-Type": "application/json",
+//         Authorization: `Bearer ${localStorage.getItem("token")}`,
+//       },
+//       body: JSON.stringify({ type: "invoice" }),
+//     });
+
+//     const logData = await logRes.json();
+//     console.log("Usage log response:", logData);
+
+//     if (!logRes.ok) {
+//       alert(logData.message || "You have exceeded your limit. Upgrade to Pro.");
+//       return; // 🚨 Stop here
+//     }
+
+//     // ✅ Capture as before
+//     const canvas = await html2canvas(invoiceRef.current, {
+//       scale: 2,
+//       useCORS: true,
+//       allowTaint: true,
+//       scrollY: -window.scrollY,
+//     });
+
+//     const imgData = canvas.toDataURL("image/png");
+//     const pdf = new jsPDF("p", "mm", "a4");
+//     const pageWidth = pdf.internal.pageSize.getWidth();
+//     const pageHeight = pdf.internal.pageSize.getHeight();
+
+//     const margin = 12;
+//     const imgWidth = pageWidth - margin * 2;
+//     const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+//     let position = margin;
+//     pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
+
+//     let heightLeft = imgHeight - (pageHeight - margin * 2);
+//     while (heightLeft > -1) {
+//       pdf.addPage();
+//       position = margin - (imgHeight - heightLeft);
+//       pdf.addImage(imgData, "PNG", margin, position, imgWidth, imgHeight);
+//       heightLeft -= pageHeight - margin * 2;
+//     }
+
+//     // ✅ Convert PDF to blob and share
+//     const pdfBlob = pdf.output("blob");
+//     const file = new File([pdfBlob], `Invoice-${id}.pdf`, {
+//       type: "application/pdf",
+//     });
+
+//     if (navigator.canShare && navigator.canShare({ files: [file] })) {
+//       await navigator.share({
+//         title: "QuickInvoice Invoice",
+//         text: `Here is your invoice #${id}`,
+//         files: [file],
+//       });
+//     } else {
+//       alert("Sharing not supported on this device/browser. Please download instead.");
+//     }
+//   } catch (err) {
+//     console.error("PDF share failed", err);
+//     alert("Failed to share PDF. Try again.");
+//   } 
+// };
+
+const sharePDF = async () => {
+  if (!invoiceRef.current) return;
+  setActionLoading(true);
+
   try {
-    // ✅ Log usage (same as download)
+    // ✅ Log usage
     const logRes = await fetch(`${API_BASE}/api/invoices/log`, {
       method: "POST",
       headers: {
@@ -132,10 +204,11 @@ export default function InvoiceDetails() {
 
     if (!logRes.ok) {
       alert(logData.message || "You have exceeded your limit. Upgrade to Pro.");
-      return; // 🚨 Stop here
+      setActionLoading(false);
+      return;
     }
 
-    // ✅ Capture as before
+    // ✅ Capture invoice as before
     const canvas = await html2canvas(invoiceRef.current, {
       scale: 2,
       useCORS: true,
@@ -163,12 +236,12 @@ export default function InvoiceDetails() {
       heightLeft -= pageHeight - margin * 2;
     }
 
-    // ✅ Convert PDF to blob and share
+    // ✅ Convert PDF to blob & file
     const pdfBlob = pdf.output("blob");
-    const file = new File([pdfBlob], `Invoice-${id}.pdf`, {
-      type: "application/pdf",
-    });
+    const fileName = `Invoice-${id}.pdf`;
+    const file = new File([pdfBlob], fileName, { type: "application/pdf" });
 
+    // ✅ Try Web Share API first
     if (navigator.canShare && navigator.canShare({ files: [file] })) {
       await navigator.share({
         title: "QuickInvoice Invoice",
@@ -176,13 +249,29 @@ export default function InvoiceDetails() {
         files: [file],
       });
     } else {
-      alert("Sharing not supported on this device/browser. Please download instead.");
+      // 🚨 Fallback: Download PDF
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      const link = document.createElement("a");
+      link.href = pdfUrl;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      // Optional: WhatsApp / Email fallback
+      // window.open(`https://wa.me/?text=Here’s your invoice: ${pdfUrl}`, "_blank");
+      // window.location.href = `mailto:?subject=Invoice&body=Download your invoice here: ${pdfUrl}`;
+
+      alert("Sharing not supported on this device. The invoice has been downloaded instead.");
     }
   } catch (err) {
     console.error("PDF share failed", err);
     alert("Failed to share PDF. Try again.");
-  } 
+  } finally {
+    setActionLoading(false);
+  }
 };
+
 
 
 

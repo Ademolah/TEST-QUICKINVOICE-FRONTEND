@@ -119,13 +119,13 @@ const NGN = (n) =>
     Number(n || 0)
   );
 
-const api = axios.create({
-  baseURL: "http://localhost:4000/api",
-});
-
 // const api = axios.create({
-//   baseURL: "https://quickinvoice-backend-1.onrender.com/api",
+//   baseURL: "http://localhost:4000/api",
 // });
+
+const api = axios.create({
+  baseURL: "https://quickinvoice-backend-1.onrender.com/api",
+});
 
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem("token");
