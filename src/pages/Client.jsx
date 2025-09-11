@@ -10,6 +10,12 @@ export default function Client() {
   const [clients, setClients] = useState([]);
   const navigate = useNavigate();
 
+  
+
+  const handleSelectClient = (client) => {
+    navigate("/invoices/new", { state: { client } });
+  };
+
   useEffect(() => {
     const fetchClients = async () => {
       try {
@@ -40,7 +46,7 @@ export default function Client() {
         </thead>
         <tbody>
           {clients.map((client, idx) => (
-            <tr key={idx} className="border-t">
+            <tr key={idx} onClick={() => handleSelectClient(client)} className="border-t">
               <td className="p-2">{client.name}</td>
               <td className="p-2">{client.phone}</td>
               <td className="p-2">{client.email}</td>
