@@ -56,6 +56,15 @@ export default function Client() {
                 ) : (
                   <span className="text-red-600 font-medium">Unpaid</span>
                 )}
+
+                <td className="p-2">
+              <button
+                onClick={() => handleSelectClient(client)}
+                className="bg-[#0046A5] text-white px-3 py-1 rounded hover:bg-blue-700 transition"
+              >
+                New Invoice
+              </button>
+            </td>
               </td>
             </tr>
           ))}
