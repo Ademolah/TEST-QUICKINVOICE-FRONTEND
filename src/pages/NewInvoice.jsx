@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { Plus, Trash } from 'lucide-react';
@@ -13,7 +13,8 @@ const NewInvoice = () => {
   const navigate = useNavigate();
 
   const location = useLocation();
-  const selectedClient = location.state?.client || {};
+  // const selectedClient = location.state?.client || {};
+   const selectedClient = useMemo(() => location.state?.client || null, [location.state]);
   
 
   const [clientName, setClientName] = useState('');
